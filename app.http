@@ -1,0 +1,59 @@
+POST http://localhost:5000/signup
+Content-Type: application/json
+
+{
+  "name": "John Doe2",
+  "email": "john2@example.com",
+  "password": "john12345"
+}
+
+
+
+######
+
+POST http://localhost:3000/login
+Content-Type: application/json
+
+{
+  "email": "revanth19042001@gmail.com",
+  "password": "revanth123"
+}
+
+
+######
+
+POST http://localhost:5000/tasks
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImlhdCI6MTczOTcyMzY1OX0.sw8aQJniQewGSQPIcXtu-Bi4nrebb-VKXVzhgg3FAbE
+
+{
+  "title": "learn HTML",
+  "description": "Task Description",
+  "due_date": "2025-02-25",
+  "user_id":"1"
+}
+
+
+
+######
+
+GET http://localhost:3000/tasks
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImlhdCI6MTczOTY5OTAzMH0.Y4eVwkEHhbGdj_WIr4yoA0Uh1if5NyfdROX-u9zMfEk
+
+
+#####
+PUT http://localhost:3000/tasks/1
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImlhdCI6MTczOTY5OTAzMH0.Y4eVwkEHhbGdj_WIr4yoA0Uh1if5NyfdROX-u9zMfEk
+
+{
+  "title": "LEARN JS",
+  "description": "Updated Description",
+  "status": "Completed",
+  "due_date": "2025-02-25"
+}
+
+
+######
+DELETE http://localhost:5000/tasks/2
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJqb2huQGV4YW1wbGUuY29tIiwiaWF0IjoxNzQyMTI5Mzk0LCJleHAiOjE3NDIyMTU3OTR9.4IlXBLKPxSjiH-zXnN90PVe0h8V1P3gQnqNAAcUjl0U
