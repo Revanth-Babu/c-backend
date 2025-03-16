@@ -126,10 +126,11 @@ app.post('/signup', async (req, res) => {
         }
 
         // Generate JWT token
-        const token = jwt.sign({ id: this.lastID, email }, JWT_SECRET, { expiresIn: '24h' });
+        const token = jwt.sign({ id: this.lastID, email, name }, JWT_SECRET, { expiresIn: '24h' });
         res.status(201).json({ 
           message: 'User registered successfully',
           userId: this.lastID,
+          name,
           token
         });
       });
@@ -165,7 +166,7 @@ app.post('/login', (req, res) => {
       }
 
       // Generate JWT token
-      const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '24h' });
+      const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '24h' });
       res.json({ 
         message: 'Login successful', 
         userId: user.id,
@@ -178,6 +179,36 @@ app.post('/login', (req, res) => {
   }
 });
 
+// Fix: Move the search endpoint BEFORE the :id endpoint to avoid routing conflict
+// BONUS: Search and filter tasks
+app.get('/tasks/search', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  const { query, status } = req.query;
+  
+  let sql = 'SELECT * FROM tasks WHERE user_id = ?';
+  let params = [userId];
+  
+  if (query) {
+    sql += ' AND (title LIKE ? OR description LIKE ?)';
+    params.push(`%${query}%`, `%${query}%`);
+  }
+  
+  if (status) {
+    sql += ' AND status = ?';
+    params.push(status);
+  }
+  
+  sql += ' ORDER BY created_at DESC';
+  
+  db.all(sql, params, (err, tasks) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    // Fix: Return an array instead of an object with tasks property
+    res.json(tasks);
+  });
+});
+
 // Get all tasks for a user
 app.get('/tasks', authenticateToken, (req, res) => {
   const userId = req.user.id;
@@ -186,7 +217,27 @@ app.get('/tasks', authenticateToken, (req, res) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
-    res.json({ tasks });
+    // Fix: Return an array instead of an object with tasks property
+    res.json(tasks);
+  });
+});
+
+// Get a specific task
+app.get('/tasks/:id', authenticateToken, (req, res) => {
+  const taskId = req.params.id;
+  const userId = req.user.id;
+
+  db.get('SELECT * FROM tasks WHERE id = ? AND user_id = ?', [taskId, userId], (err, task) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    
+    if (!task) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    
+    // Fix: Return task directly instead of wrapping in object
+    res.json(task);
   });
 });
 
@@ -213,30 +264,13 @@ app.post('/tasks', authenticateToken, (req, res) => {
         if (err) {
           return res.status(500).json({ error: err.message });
         }
-        res.status(201).json({ message: 'Task created successfully', task });
+        // Fix: Return task directly instead of wrapping in object
+        res.status(201).json(task);
       });
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-});
-
-// Get a specific task
-app.get('/tasks/:id', authenticateToken, (req, res) => {
-  const taskId = req.params.id;
-  const userId = req.user.id;
-
-  db.get('SELECT * FROM tasks WHERE id = ? AND user_id = ?', [taskId, userId], (err, task) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    
-    if (!task) {
-      return res.status(404).json({ error: 'Task not found' });
-    }
-    
-    res.json({ task });
-  });
 });
 
 // Update a task
@@ -280,7 +314,8 @@ app.put('/tasks/:id', authenticateToken, (req, res) => {
           if (err) {
             return res.status(500).json({ error: err.message });
           }
-          res.json({ message: 'Task updated successfully', task: updatedTask });
+          // Fix: Return updated task directly
+          res.json(updatedTask);
         });
       });
     });
@@ -303,35 +338,7 @@ app.delete('/tasks/:id', authenticateToken, (req, res) => {
       return res.status(404).json({ error: 'Task not found or unauthorized' });
     }
 
-    res.json({ message: 'Task deleted successfully', taskId });
-  });
-});
-
-// BONUS: Search and filter tasks
-app.get('/tasks/search', authenticateToken, (req, res) => {
-  const userId = req.user.id;
-  const { query, status } = req.query;
-  
-  let sql = 'SELECT * FROM tasks WHERE user_id = ?';
-  let params = [userId];
-  
-  if (query) {
-    sql += ' AND (title LIKE ? OR description LIKE ?)';
-    params.push(`%${query}%`, `%${query}%`);
-  }
-  
-  if (status) {
-    sql += ' AND status = ?';
-    params.push(status);
-  }
-  
-  sql += ' ORDER BY created_at DESC';
-  
-  db.all(sql, params, (err, tasks) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    res.json({ tasks });
+    res.json({ message: 'Task deleted successfully', id: taskId });
   });
 });
 
